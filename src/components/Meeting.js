@@ -38,8 +38,6 @@ export const Meeting = (props) => {
         // setStep(CHATTING);
     };
 
-    console.log(users);
-
     return (
         <div>
             <span>{meetingName}</span>
@@ -49,6 +47,11 @@ export const Meeting = (props) => {
                 onChange={handleChange}
             />
             <button onClick={joinRoom}>Join Room</button>
+            {users.map((each) => (
+                <span key={each.id}>
+                    {each.name}
+                </span>
+            ))}
         </div>
     );
 };

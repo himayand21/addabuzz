@@ -8,10 +8,11 @@ const PORT = process.env.PORT || 5000;
 
 const app = express();
 const httpServer = http.createServer(app);
+
 const io = socketIO(httpServer);
 
 let meetings = [];
-const users = {};
+let users = [];
 
 app.use(express.static(__dirname + '/build'));
 
@@ -21,36 +22,18 @@ app.get('*', (req, res) => {
 
 io.on('connection', (socket) => {
 
-    console.info('Connection established');
-
-    // const existingSocket = activeUsers.find(
-    //     (each) => each === socket.id
-    // );
-
-    // if (!existingSocket) {
-    //     activeUsers.push(socket.id);
-    //     socket.broadcast.emit('update-user-list', {
-    //         users: activeUsers
-    //     });
-    // }
-
     // send all meetings on connection
     io.sockets.emit('update-meetings', meetings);
 
     // when meeting is created
     socket.on('create-meeting', (name) => {
 
-        console.info('Create meeting called');
-
         const meetingId = shortID.generate();
-
         const newMeeting = {
             id: meetingId,
             name
         };
-
         meetings.push(newMeeting);
-        users[meetingId] = [];
 
         // to create new routes in application
         io.sockets.emit('update-meetings', meetings);
@@ -70,32 +53,42 @@ io.on('connection', (socket) => {
     // when user wants list of users who have joined the meeting
     socket.on('get-participants', (meetingId) => {
         io.in(meetingId).clients((error, clients) => {
-            socket.emit('update-participants', clients);
+            const meetingUsers = users.filter((each) => {
+                return clients.includes(each.id);
+            });
+            socket.emit('update-participants', meetingUsers);
         });
     });
 
     // when user joins a meeting
     socket.on('join-meeting', ({meetingId, name}) => {
         socket.join(meetingId);
-        users[meetingId].push({
+        users.push({
             name,
-            id: socket.id
+            id: socket.id,
+            meetingId
         });
-        const meetingUsers = users[meetingId];
 
-        console.log(meetingUsers);
-        io.in(meetingId).emit('update-participants', meetingUsers);
+        io.in(meetingId).clients((error, clients) => {
+            const meetingUsers = users.filter((each) => {
+                return clients.includes(each.id);
+            });
+            io.in(meetingId).emit('update-meeting-users', meetingUsers);
+        });
     });
 
     socket.on('disconnect', () => {
-
-        console.info('Connection lost');
-        // activeUsers = activeUsers.filter(
-        //     (each) => each !== socket.id
-        // );
-        // socket.broadcast.emit('update-user-list', {
-        //     users: activeUsers
-        // });
+        const {meetingId} = users.find((each) => each.id === socket.id) || {};
+        users = users.filter((each) => each.id !== socket.id);
+        if (meetingId) {
+            socket.leave(meetingId);
+            io.in(meetingId).clients((error, clients) => {
+                const meetingUsers = users.filter((each) => {
+                    return clients.includes(each.id);
+                });
+                io.in(meetingId).emit('update-meeting-users', meetingUsers);
+            });
+        }
     });
 });
 

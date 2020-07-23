@@ -9,7 +9,8 @@ import './App.scss';
 const App = () => {
     const [name, setName] = useState('');
     const [createdMeeting, setCreatedMeeting] = useState({});
-    const [meetings, setMeetings] = useState([]);
+    const [meetings, setMeetings] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     const socket = useContext(SocketContext);
 
@@ -21,6 +22,10 @@ const App = () => {
             setCreatedMeeting(meeting);
         });
     }, []);
+
+    useEffect(() => {
+        if (meetings) setLoading(false);
+    }, [meetings]);
 
     const createMeeting = () => {
         socket.emit('create-meeting', name);
@@ -58,6 +63,7 @@ const App = () => {
                 >
                     <Home
                         meetings={meetings}
+                        loading={loading}
                     />
                 </Route>
                 <Route>
