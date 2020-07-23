@@ -4,13 +4,13 @@ import PropTypes from 'prop-types';
 import {SocketContext} from '../context';
 import {Me} from './Me';
 
-const CONFIRM = 'CONFIRM';
-const CHATTING = 'CHATTING';
-const BYE = 'BYE';
+// const CONFIRM = 'CONFIRM';
+// const CHATTING = 'CHATTING';
+// const BYE = 'BYE';
 
 export const Meeting = (props) => {
     const [name, setName] = useState('');
-    const [step, setStep] = useState(CONFIRM);
+    // const [step, setStep] = useState(CONFIRM);
     const [users, setUsers] = useState([]);
 
     const socket = useContext(SocketContext);
@@ -35,7 +35,7 @@ export const Meeting = (props) => {
             meetingId,
             name
         }));
-        setStep(CHATTING);
+        // setStep(CHATTING);
     };
 
     console.log(users);
