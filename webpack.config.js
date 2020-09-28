@@ -49,9 +49,15 @@ const config = function(env) {
         },
         devServer: {
             contentBase: './build',
-            host: 'localhost',
+            host: '0.0.0.0',
             open: true,
-            historyApiFallback: true
+            historyApiFallback: true,
+            proxy: {
+                '/socket.io': {
+                    target: 'http://localhost:5000',
+                    secure: false
+                }
+            }
         },
         module: {
             rules: [
@@ -69,7 +75,7 @@ const config = function(env) {
                     }],
                 },
                 {
-                    test: /.(jpg|png|ogg|mp3)$/,
+                    test: /.(jpg|png|ogg|mp3|svg)$/,
                     use: {
                         loader: 'file-loader',
                         options: {

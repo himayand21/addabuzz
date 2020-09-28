@@ -1,76 +1,42 @@
-import React, {useEffect, useState, useContext} from 'react';
+import React from 'react';
+import styled from 'styled-components';
 import {BrowserRouter as Router, Switch, Route} from 'react-router-dom';
 
-import {Home} from './components/Home';
-import {SocketContext} from './context';
+import {Home} from './pages/Home';
+import {Landing} from './pages/Landing';
 
-import './App.scss';
+import {backgroundYellow} from './constants/colors';
+
+import './polyfill';
+import './App.css';
 
 const App = () => {
-    const [name, setName] = useState('');
-    const [createdMeeting, setCreatedMeeting] = useState({});
-    const [meetings, setMeetings] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    const socket = useContext(SocketContext);
-
-    useEffect(() => {
-        socket.on('update-meetings', (newMeetings) => {
-            setMeetings(newMeetings);
-        });
-        socket.on('create-meeting-success', (meeting) => {
-            setCreatedMeeting(meeting);
-        });
-    }, []);
-
-    useEffect(() => {
-        if (meetings) setLoading(false);
-    }, [meetings]);
-
-    const createMeeting = () => {
-        socket.emit('create-meeting', name);
-    };
-
-    const handleChange = (event) => {
-        const {value} = event.target;
-        setName(value);
-    };
-
     return (
-        <Router>
-            <Switch>
-                <Route
-                    exact
-                    path="/"
-                >
-                    <div className="container">
-                        <input
-                            value={name}
-                            onChange={handleChange}
-                        />
-                        <button
-                            onClick={createMeeting}
-                        >
-				            Create Meeting
-                        </button>
-                        {(createdMeeting.id) && (
-                            <div>{`Meeting URL: ${window.location.href}meet/${createdMeeting.id}`}</div>
-                        )}
-                    </div>
-                </Route>
-                <Route
-                    path="/meet/:meetingId"
-                >
-                    <Home
-                        meetings={meetings}
-                        loading={loading}
-                    />
-                </Route>
-                <Route>
-                    Nothing here
-                </Route>
-            </Switch>
-        </Router>
+        <AppContainer>
+            <Router>
+                <Switch>
+                    <Route
+                        exact
+                        path="/"
+                    >
+                        <Landing />
+                    </Route>
+                    <Route
+                        path="/meet/:meetingId"
+                    >
+                        <Home />
+                    </Route>
+                    <Route>
+                        Nothing here
+                    </Route>
+                </Switch>
+            </Router>
+        </AppContainer>
     );
 };
+
+const AppContainer = styled.div`
+    background-color: ${backgroundYellow};
+`;
+
 export default App;
