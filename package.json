@@ -7,8 +7,7 @@
     "devbuild": "webpack --env=development",
     "start": "rm -rf build && webpack --env=development && node server.js",
     "start:client": "webpack-dev-server",
-    "start:server": "nodemon server.js",
-    "start:dev": "nodemon --ignore 'build/*'"
+    "start:server": "nodemon server.js"
   },
   "browserslist": {
     "production": [
