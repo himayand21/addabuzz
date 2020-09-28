@@ -169,8 +169,8 @@ const Video = styled.video`
     border-radius: 10px;
     width: 100%;
     background-color: black;
-    min-width: calc(100vw - 50px);
-    min-height: calc(56vw - 28px);
+    min-width: calc(100vw - 40px);
+    min-height: calc(56vw - 22px);
     @media only screen and (min-width: ${desktop}) {
         min-width: 640px;
         min-height: 360px;
