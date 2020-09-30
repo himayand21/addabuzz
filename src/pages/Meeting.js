@@ -5,7 +5,7 @@ import {USER_LEFT, GET_BLINDED_USERS, GET_MUTED_USERS, GOT_BLINDED_USERS, GOT_MU
 
 import {SocketContext} from '../context';
 import {You} from '../components/You';
-import {Me} from '../components/Me';
+import {Me} from '../sections/Me';
 
 export const Meeting = (props) => {
     const [streams, setStreams] = useState({});

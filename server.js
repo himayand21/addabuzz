@@ -4,6 +4,8 @@ const express = require('express');
 const socketIO = require('socket.io');
 const shortID = require('shortid');
 
+const {ExpressPeerServer} = require('peer');
+
 const {
     GET_MEETING,
     CREATE_MEETING,
@@ -26,11 +28,6 @@ const {
 
 const PORT = process.env.PORT || 5000;
 
-const app = express();
-const httpServer = http.createServer(app);
-
-const io = socketIO(httpServer);
-
 let meetings = [{
     id: 123,
     name: 'Let us meet'
@@ -39,7 +36,16 @@ let users = [];
 const mutedUsers = {};
 const blindedUsers = {};
 
+const app = express();
+const httpServer = http.createServer(app);
+
+const io = socketIO(httpServer);
+
 app.use(express.static(__dirname + '/build'));
+
+app.use('/peer', ExpressPeerServer(httpServer, {
+    debug: true
+}));
 
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname + '/build/index.html'));

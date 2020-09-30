@@ -7,7 +7,7 @@ import {tablet, desktop} from '../constants/media';
 import micOff from '../assets/mic_off.svg';
 import videoOff from '../assets/video_off.svg';
 
-import {Progress} from './Me';
+import {Progress} from './Progress';
 
 const Mute = () => {
     return <Icon src={micOff} />;

@@ -7,65 +7,13 @@ import {USER_JOINED, MUTE_USER, BLIND_USER} from '../../socket';
 
 import {failedToLoad} from '../constants/strings';
 import {tablet, desktop} from '../constants/media';
-import {yellow, fadedYellow, fadedIconYellow, backgroundBlack, yellowHover} from '../constants/colors';
-
-import micOn from '../assets/mic_on.svg';
-import micOff from '../assets/mic_off.svg';
-import videoOn from '../assets/video_on.svg';
-import videoOff from '../assets/video_off.svg';
-import hangUp from '../assets/hang_up.svg';
+import {backgroundBlack} from '../constants/colors';
 
 import {SocketContext} from '../context';
-import {YourVideoWrapper, YourVideo} from './You';
+import {Progress} from '../components/Progress';
+import {Mute, Blind, Hangup} from '../components/IconButtons';
 
-export const Progress = (props) => {
-    const {volume} = props;
-    return (
-        <ProgressContainer>
-            <ProgressBar
-                style={{transform: `scaleX(${(volume / 25)})`}}
-            />
-        </ProgressContainer>
-    );
-};
-
-Progress.propTypes = {
-    volume: PropTypes.number
-};
-
-const Hangup = (props) => {
-    return (
-        <HangupButton {...props}>
-            <Icon src={hangUp} />
-        </HangupButton>
-    );
-};
-
-const Mute = (props) => {
-    const {muted, ...otherProps} = props;
-    return (
-        <IconButton active={!muted} {...otherProps}>
-            <Icon src={muted ? micOff : micOn} />
-        </IconButton>
-    );
-};
-
-Mute.propTypes = {
-    muted: PropTypes.bool
-};
-
-const Blind = (props) => {
-    const {blinded, ...otherProps} = props;
-    return (
-        <IconButton active={!blinded} {...otherProps}>
-            <Icon src={blinded ? videoOff : videoOn} />
-        </IconButton>
-    );
-};
-
-Blind.propTypes = {
-    blinded: PropTypes.bool
-};
+import {YourVideoWrapper, YourVideo} from '../components/You';
 
 export const Me = (props) => {
     const [error, setError] = useState(false);
@@ -103,7 +51,16 @@ export const Me = (props) => {
     useEffect(() => {
         if (peerProps) {
             const {id} = peerProps;
-            const createdPeer = new Peer(id);
+            const isProd = process.env.NODE_ENV === 'production';
+            const prodPort = location.port || (location.protocol === 'https:' ? 443 : 80);
+            const devPort = 5000;
+            const port = isProd ? prodPort : devPort;
+            const options = {
+                host: location.hostname,
+                port,
+                path: '/peer'
+            };
+            const createdPeer = new Peer(id, options);
             setPeer(createdPeer);
         } else {
             setStream();
@@ -272,30 +229,6 @@ const MyVideo = styled.video`
     }
 `;
 
-const ProgressContainer = styled.div`
-    height: 10px;
-    width: 50px;
-    border-radius: 4px;
-    box-sizing: border-box;
-    background-color: ${fadedYellow};
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    overflow: hidden;
-    position: absolute;
-    bottom: 20px;
-    left: 15px;
-    z-index: 2;
-`;
-
-const ProgressBar = styled.div`
-    height: 10px;
-    background-color: ${yellow};
-    transition: transform 0.3s ease-out;
-    width: 100%;
-    transform-origin: left;
-`;
-
 const MyVideoWrapper = styled.div`
     position: relative;
     width: 100%;
@@ -321,55 +254,6 @@ const Message = styled.div`
     @media only screen and (min-width: ${desktop}) {
         top: 25px;
         font-size: 18px;
-    }
-`;
-
-const IconButton = styled.button`
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: ${(props) => props.active ? 'transparent' : fadedYellow};
-    border: 2px solid ${yellow};
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    outline: none;
-    box-sizing: border-box;
-    margin: 0 3px;
-    cursor: pointer;
-    transition: background-color 0.3s ease-out;
-    &:hover {
-        background-color: ${(props) => props.active ? fadedYellow : fadedIconYellow};
-    }
-    @media only screen and (min-width: ${tablet}) {
-        width: 60px;
-        height: 60px;
-        margin: 0 5px;
-    }
-    @media only screen and (min-width: ${desktop}) {
-        width: 50px;
-        height: 50px;
-        margin: 0 5px;
-    }
-`;
-
-const HangupButton = styled(IconButton)`
-    background-color: ${yellow};
-    &:hover {
-        background-color: ${yellowHover};
-    }
-`;
-
-const Icon = styled.img`
-    max-width: 20px;
-    max-height: 20px;
-    @media only screen and (min-width: ${tablet}) {
-        max-width: 30px;
-        max-height: 30px;
-    }
-    @media only screen and (min-width: ${desktop}) {
-        max-width: 25px;
-        max-height: 25px;
     }
 `;
 

@@ -6,7 +6,7 @@ import {GET_USERS, GOT_USERS, JOINED_MEETING, JOIN_MEETING} from '../../socket';
 
 import {SocketContext} from '../context';
 
-import {Me} from '../components/Me';
+import {Me} from '../sections/Me';
 import {NavBar} from '../components/NavBar';
 import {Footer} from '../components/Footer';
 import {Button} from '../components/Button';
