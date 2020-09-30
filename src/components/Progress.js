@@ -29,10 +29,6 @@ const ProgressContainer = styled.div`
     align-items: center;
     justify-content: flex-start;
     overflow: hidden;
-    position: absolute;
-    bottom: 20px;
-    left: 15px;
-    z-index: 2;
 `;
 
 const ProgressBar = styled.div`

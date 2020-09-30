@@ -7,19 +7,21 @@ import {USER_JOINED, MUTE_USER, BLIND_USER} from '../../socket';
 
 import {failedToLoad} from '../constants/strings';
 import {tablet, desktop} from '../constants/media';
-import {backgroundBlack} from '../constants/colors';
 
 import {SocketContext} from '../context';
+
 import {Progress} from '../components/Progress';
 import {Mute, Blind, Hangup} from '../components/IconButtons';
 
-import {YourVideoWrapper, YourVideo} from '../components/You';
+import {BigVideoWrapper, BigVideo} from '../wrappers/BigVideo';
+import {IntroVideoWrapper, IntroVideo} from '../wrappers/IntroVideo';
+import {FixedActionButtons, IntroActionButtons} from '../wrappers/ActionButtons';
+import {ReadOnlyWrapper, ReadOnlyButtons, MuteReadOnly, BlindReadOnly} from '../wrappers/ReadOnlyButtons';
 
 export const Me = (props) => {
     const [error, setError] = useState(false);
     const [volume, setVolume] = useState(0);
     const [localStream, setLocalStream] = useState();
-    const [peer, setPeer] = useState();
 
     const {muted, setMuted, blinded, setBlinded, peerProps} = props;
 
@@ -49,60 +51,13 @@ export const Me = (props) => {
     };
 
     useEffect(() => {
+        startStream();
         if (peerProps) {
-            const {id} = peerProps;
-            const isProd = process.env.NODE_ENV === 'production';
-            const prodPort = location.port || (location.protocol === 'https:' ? 443 : 80);
-            const devPort = 5000;
-            const port = isProd ? prodPort : devPort;
-            const options = {
-                host: location.hostname,
-                port,
-                path: '/peer'
-            };
-            const createdPeer = new Peer(id, options);
-            setPeer(createdPeer);
-        } else {
-            setStream();
+            return (() => {
+                socket.off(USER_JOINED);
+            });
         }
     }, []);
-
-    useEffect(() => {
-        if (peer) {
-            setStream();
-        }
-    }, [peer]);
-
-    useEffect(() => {
-        if (peer && localStream) {
-            const {setStreams} = peerProps;
-            peer.on('call', (call) => {
-                call.answer(localStream);
-                call.on('stream', (userVideoStream) => {
-                    setStreams((oldStreams) => ({
-                        ...oldStreams,
-                        [call.peer]: userVideoStream
-                    }));
-                });
-            });
-            socket.on(USER_JOINED, (userId) => {
-                const call = peer.call(userId, localStream);
-                call.on('stream', (userVideoStream) => {
-                    setStreams((oldStreams) => ({
-                        ...oldStreams,
-                        [userId]: userVideoStream
-                    }));
-                });
-                call.on('close', () => {
-                    setStreams((oldStreams) => {
-                        // eslint-disable-next-line no-unused-vars
-                        const {[userId]: userStream, ...rest} = oldStreams;
-                        return rest;
-                    });
-                });
-            });
-        }
-    }, [peer, localStream]);
 
     useEffect(() => {
         if (localStream && !muted) {
@@ -115,7 +70,7 @@ export const Me = (props) => {
         }
     }, [localStream]);
 
-    const setStream = () => {
+    const startStream = () => {
         navigator
             .mediaDevices
             .getUserMedia(streamConstraints)
@@ -123,6 +78,44 @@ export const Me = (props) => {
                 stream.getVideoTracks()[0].enabled = !blinded;
                 stream.getAudioTracks()[0].enabled = !muted;
                 setLocalStream(stream);
+                if (peerProps) {
+                    const {id, setStreams} = peerProps;
+                    const isProd = process.env.NODE_ENV === 'production';
+                    const prodPort = location.port || (location.protocol === 'https:' ? 443 : 80);
+                    const devPort = 5000;
+                    const port = isProd ? prodPort : devPort;
+                    const options = {
+                        host: location.hostname,
+                        port,
+                        path: '/peer'
+                    };
+                    const peer = new Peer(id, options);
+                    peer.on('call', (call) => {
+                        call.answer(stream);
+                        call.on('stream', (userVideoStream) => {
+                            setStreams((oldStreams) => ({
+                                ...oldStreams,
+                                [call.peer]: userVideoStream
+                            }));
+                        });
+                    });
+                    socket.on(USER_JOINED, (userId) => {
+                        const call = peer.call(userId, stream);
+                        call.on('stream', (userVideoStream) => {
+                            setStreams((oldStreams) => ({
+                                ...oldStreams,
+                                [userId]: userVideoStream
+                            }));
+                        });
+                        call.on('close', () => {
+                            setStreams((oldStreams) => {
+                                // eslint-disable-next-line no-unused-vars
+                                const {[userId]: userStream, ...rest} = oldStreams;
+                                return rest;
+                            });
+                        });
+                    });
+                }
             })
             .catch((err) => {
                 console.log('navigator.getUserMedia error: ', err);
@@ -182,15 +175,26 @@ export const Me = (props) => {
         }
     };
 
-    const VideoWrapper = peerProps ? YourVideoWrapper : MyVideoWrapper;
-    const Video = peerProps ? YourVideo : MyVideo;
+    const isBig = Boolean(peerProps);
+
+    const VideoWrapper = isBig ? BigVideoWrapper : IntroVideoWrapper;
+    const Video = isBig ? BigVideo : IntroVideo;
+    const ActionButtons = peerProps ? FixedActionButtons : IntroActionButtons;
 
     return (
         <VideoWrapper>
-            {(error || muted) ? null : (
-                <Progress volume={volume} />
-            )}
-            <ActionButtons inMeeting={Boolean(peerProps)}>
+            <ReadOnlyWrapper isBig={isBig}>
+                {(error || muted) ? null : (
+                    <Progress volume={volume} />
+                )}
+                {peerProps && (
+                    <ReadOnlyButtons isBig={isBig}>
+                        {muted && <MuteReadOnly />}
+                        {blinded && <BlindReadOnly />}
+                    </ReadOnlyButtons>
+                )}
+            </ReadOnlyWrapper>
+            <ActionButtons inMeeting={isBig}>
                 <Mute onClick={toggleMuted} muted={muted} />
                 {peerProps && <Hangup />}
                 <Blind onClick={toggleBlinded} blinded={blinded} />
@@ -215,29 +219,6 @@ Me.propTypes = {
     peerProps: PropTypes.object
 };
 
-const MyVideo = styled.video`
-    transform: rotateY(180deg);
-    border-radius: 10px;
-    width: 100%;
-    background-color: black;
-    min-width: calc(100vw - 40px);
-    min-height: calc(56vw - 22px);
-    max-height: 60vh;
-    @media only screen and (min-width: ${desktop}) {
-        min-width: 640px;
-        min-height: 360px;
-    }
-`;
-
-const MyVideoWrapper = styled.div`
-    position: relative;
-    width: 100%;
-    margin: 0 10px;
-    @media only screen and (min-width: ${desktop}) {
-        max-width: 640px;
-    }
-`;
-
 const Message = styled.div`
     position: absolute;
     top: 15px;
@@ -255,37 +236,4 @@ const Message = styled.div`
         top: 25px;
         font-size: 18px;
     }
-`;
-
-const ActionButtons = styled.div`
-    ${(props) => props.inMeeting ? (`
-        position: fixed;
-        bottom: 0px;
-        padding: 15px 0px;
-        background-color: ${backgroundBlack};
-        height: 80x;
-        box-sizing: border-box;
-        @media only screen and (min-width: ${tablet}) {
-            height: 100px;
-        }
-        @media only screen and (min-width: ${desktop}) {
-            button {
-                width: 60px;
-                height: 60px;
-                img {
-                    max-width: 30px;
-                    max-height: 30px;
-                }
-            }
-        }
-    `) : (`
-        position: absolute;
-        bottom: 20px;
-        z-index: 2;
-    `)}
-    left: 0px;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 `;

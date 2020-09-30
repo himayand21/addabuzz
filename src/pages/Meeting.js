@@ -1,7 +1,11 @@
 import React, {useEffect, useContext, useState} from 'react';
 import PropTypes from 'prop-types';
+import styled from 'styled-components';
 
 import {USER_LEFT, GET_BLINDED_USERS, GET_MUTED_USERS, GOT_BLINDED_USERS, GOT_MUTED_USERS} from '../../socket';
+
+import {tablet, desktop} from '../constants/media';
+import {fadedBackgroundBlack} from '../constants/colors';
 
 import {SocketContext} from '../context';
 import {You} from '../components/You';
@@ -32,8 +36,13 @@ export const Meeting = (props) => {
         });
     }, []);
 
+    const remoteStreamsExist = Boolean(Object.keys(streams).length);
+
     return (
-        <>
+        <MeetingWrapper>
+            {remoteStreamsExist && (
+                <Opacify />
+            )}
             <Me
                 {...otherProps}
                 peerProps={{
@@ -55,12 +64,65 @@ export const Meeting = (props) => {
                     />
                 );
             })}
-        </>
+        </MeetingWrapper>
     );
 };
 
 Meeting.propTypes = {
     users: PropTypes.array,
     id: PropTypes.string,
-    meetingId: PropTypes.string
+    meetingId: PropTypes.number
 };
+
+const MeetingWrapper = styled.div`
+    display: flex;
+    position: fixed;
+    left: 0px;
+    bottom: 80px;
+    padding: 10px;
+    align-items: center;
+    justify-content: flex-start;
+    max-width: 100vw;
+    overflow: auto;
+    box-sizing: border-box;
+    @media only screen and (min-width: ${tablet}) {
+        bottom: 100px;
+        padding: 15px;
+    }
+    @media only screen and (min-width: ${desktop}) {
+        bottom: unset;
+        left: unset;
+        right: 0px;
+        flex-direction: column;
+        max-width: unset;
+        min-width: 330px;
+        max-height: calc(100vh - 100px);
+    }
+`;
+
+const Opacify = styled.div`
+    position: fixed;
+    left: 0px;
+    bottom: 80px;
+    max-height: 190px;
+    min-height: 190px;
+    max-width: 100vw;
+    min-width: 100vw;
+    background-color: ${fadedBackgroundBlack};
+    z-index: 3;
+    @media only screen and (min-width: ${tablet}) {
+        max-height: 230px;
+        min-height: 230px;
+        bottom: 100px;
+    }
+    @media only screen and (min-width: ${desktop}) {
+        max-width: 330px;
+        min-width: 330px;
+        max-height: calc(100vh - 100px);
+        min-height: calc(100vh - 100px);
+        right: 0px;
+        top: 0px;
+        left: unset;
+        bottom: unset;
+    }
+`;
