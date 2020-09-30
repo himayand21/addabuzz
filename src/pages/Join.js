@@ -34,6 +34,9 @@ export const Join = (props) => {
     const [id, setId] = useState(null);
     const [users, setUsers] = useState([]);
 
+    const [muted, setMuted] = useState(false);
+    const [blinded, setBlinded] = useState(false);
+
     const socket = useContext(SocketContext);
 
     const {meeting} = props;
@@ -63,7 +66,9 @@ export const Join = (props) => {
     const joinMeeting = () => {
         socket.emit(JOIN_MEETING, ({
             meetingId,
-            name
+            name,
+            muted,
+            blinded
         }));
     };
 
@@ -72,6 +77,11 @@ export const Join = (props) => {
             <Meeting
                 users={users}
                 id={id}
+                meetingId={meetingId}
+                muted={muted}
+                setMuted={setMuted}
+                blinded={blinded}
+                setBlinded={setBlinded}
             />
         );
     }
@@ -81,7 +91,12 @@ export const Join = (props) => {
             <NavBar />
             <JoiningPage>
                 <JoinLeftWrapper>
-                    <Me />
+                    <Me
+                        muted={muted}
+                        setMuted={setMuted}
+                        blinded={blinded}
+                        setBlinded={setBlinded}
+                    />
                 </JoinLeftWrapper>
                 <JoinRightWrapper>
                     <Container>

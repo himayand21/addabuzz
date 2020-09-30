@@ -15,7 +15,13 @@ const {
     JOINED_MEETING,
     MEETING_EXPIRED,
     USER_LEFT,
-    USER_JOINED
+    USER_JOINED,
+    MUTE_USER,
+    BLIND_USER,
+    GET_MUTED_USERS,
+    GET_BLINDED_USERS,
+    GOT_BLINDED_USERS,
+    GOT_MUTED_USERS
 } = require('./socket');
 
 const PORT = process.env.PORT || 5000;
@@ -30,6 +36,8 @@ let meetings = [{
     name: 'Let us meet'
 }];
 let users = [];
+const mutedUsers = {};
+const blindedUsers = {};
 
 app.use(express.static(__dirname + '/build'));
 
@@ -77,8 +85,44 @@ io.on('connection', (socket) => {
         });
     });
 
+    // when user mutes oneself
+    socket.on(MUTE_USER, ({meetingId, muted}) => {
+        if (!mutedUsers[meetingId]) {
+            mutedUsers[meetingId] = {};
+        }
+        if (muted) {
+            mutedUsers[meetingId][socket.id] = true;
+        } else if (mutedUsers[meetingId][socket.id]) {
+            delete mutedUsers[meetingId][socket.id];
+        }
+        socket.to(meetingId).emit(GOT_MUTED_USERS, mutedUsers[meetingId]);
+    });
+
+    // when user blinds oneself
+    socket.on(BLIND_USER, ({meetingId, blinded}) => {
+        if (!blindedUsers[meetingId]) {
+            blindedUsers[meetingId] = {};
+        }
+        if (blinded) {
+            blindedUsers[meetingId][socket.id] = true;
+        } else if (blindedUsers[meetingId][socket.id]) {
+            delete blindedUsers[meetingId][socket.id];
+        }
+        socket.to(meetingId).emit(GOT_BLINDED_USERS, blindedUsers[meetingId]);
+    });
+
+    // when user asks for muted users
+    socket.on(GET_MUTED_USERS, (meetingId) => {
+        socket.emit(GOT_MUTED_USERS, mutedUsers[meetingId] || {});
+    });
+
+    // when user asks for blinded users
+    socket.on(GET_BLINDED_USERS, (meetingId) => {
+        socket.emit(GOT_BLINDED_USERS, blindedUsers[meetingId] || {});
+    });
+
     // when user joins a meeting
-    socket.on(JOIN_MEETING, ({meetingId, name}) => {
+    socket.on(JOIN_MEETING, ({meetingId, name, muted, blinded}) => {
         socket.join(meetingId);
         users.push({
             name,
@@ -94,6 +138,20 @@ io.on('connection', (socket) => {
             io.in(meetingId).emit(GOT_USERS, meetingUsers);
         });
         io.in(meetingId).emit(USER_JOINED, socket.id);
+
+        // letting all members other than sender know that user has preferred mute / blind
+        if (blinded) {
+            if (!blindedUsers[meetingId]) {
+                blindedUsers[meetingId] = {};
+            }
+            blindedUsers[meetingId][socket.id] = true;
+        }
+        if (muted) {
+            if (!mutedUsers[meetingId]) {
+                mutedUsers[meetingId] = {};
+            }
+            mutedUsers[meetingId][socket.id] = true;
+        }
 
         // letting this user enter
         socket.emit(JOINED_MEETING, socket.id);

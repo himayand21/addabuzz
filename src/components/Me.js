@@ -1,17 +1,24 @@
-import React, {useRef, useEffect, useState} from 'react';
+import React, {useRef, useEffect, useState, useContext} from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
+import Peer from 'peerjs';
+
+import {USER_JOINED, MUTE_USER, BLIND_USER} from '../../socket';
 
 import {failedToLoad} from '../constants/strings';
 import {tablet, desktop} from '../constants/media';
-import {yellow, fadedYellow, fadedIconYellow} from '../constants/colors';
+import {yellow, fadedYellow, fadedIconYellow, backgroundBlack, yellowHover} from '../constants/colors';
 
 import micOn from '../assets/mic_on.svg';
 import micOff from '../assets/mic_off.svg';
 import videoOn from '../assets/video_on.svg';
 import videoOff from '../assets/video_off.svg';
+import hangUp from '../assets/hang_up.svg';
 
-const Progress = (props) => {
+import {SocketContext} from '../context';
+import {YourVideoWrapper, YourVideo} from './You';
+
+export const Progress = (props) => {
     const {volume} = props;
     return (
         <ProgressContainer>
@@ -26,10 +33,18 @@ Progress.propTypes = {
     volume: PropTypes.number
 };
 
+const Hangup = (props) => {
+    return (
+        <HangupButton {...props}>
+            <Icon src={hangUp} />
+        </HangupButton>
+    );
+};
+
 const Mute = (props) => {
     const {muted, ...otherProps} = props;
     return (
-        <IconButton on={!muted} {...otherProps}>
+        <IconButton active={!muted} {...otherProps}>
             <Icon src={muted ? micOff : micOn} />
         </IconButton>
     );
@@ -42,7 +57,7 @@ Mute.propTypes = {
 const Blind = (props) => {
     const {blinded, ...otherProps} = props;
     return (
-        <IconButton on={!blinded} {...otherProps}>
+        <IconButton active={!blinded} {...otherProps}>
             <Icon src={blinded ? videoOff : videoOn} />
         </IconButton>
     );
@@ -52,14 +67,17 @@ Blind.propTypes = {
     blinded: PropTypes.bool
 };
 
-export const Me = () => {
+export const Me = (props) => {
     const [error, setError] = useState(false);
     const [volume, setVolume] = useState(0);
-    const [muted, setMuted] = useState(false);
-    const [blinded, setBlinded] = useState(false);
     const [localStream, setLocalStream] = useState();
+    const [peer, setPeer] = useState();
+
+    const {muted, setMuted, blinded, setBlinded, peerProps} = props;
 
     const ref = useRef(null);
+
+    const socket = useContext(SocketContext);
 
     const streamConstraints = {
         video: {
@@ -74,26 +92,78 @@ export const Me = () => {
             height: {
                 min: 400,
                 ideal: 1080
+            },
+            frameRate: {
+                max: 30
             }
         },
         audio: true
     };
 
     useEffect(() => {
-        setStream();
+        if (peerProps) {
+            const {id} = peerProps;
+            const createdPeer = new Peer(id);
+            setPeer(createdPeer);
+        } else {
+            setStream();
+        }
     }, []);
+
+    useEffect(() => {
+        if (peer) {
+            setStream();
+        }
+    }, [peer]);
+
+    useEffect(() => {
+        if (peer && localStream) {
+            const {setStreams} = peerProps;
+            peer.on('call', (call) => {
+                call.answer(localStream);
+                call.on('stream', (userVideoStream) => {
+                    setStreams((oldStreams) => ({
+                        ...oldStreams,
+                        [call.peer]: userVideoStream
+                    }));
+                });
+            });
+            socket.on(USER_JOINED, (userId) => {
+                const call = peer.call(userId, localStream);
+                call.on('stream', (userVideoStream) => {
+                    setStreams((oldStreams) => ({
+                        ...oldStreams,
+                        [userId]: userVideoStream
+                    }));
+                });
+                call.on('close', () => {
+                    setStreams((oldStreams) => {
+                        // eslint-disable-next-line no-unused-vars
+                        const {[userId]: userStream, ...rest} = oldStreams;
+                        return rest;
+                    });
+                });
+            });
+        }
+    }, [peer, localStream]);
+
+    useEffect(() => {
+        if (localStream && !muted) {
+            const audioContext = new AudioContext();
+            const source = audioContext.createMediaStreamSource(localStream);
+            const processor = audioContext.createScriptProcessor(256);
+            processor.onaudioprocess = processAudio;
+            processor.connect(audioContext.destination);
+            source.connect(processor);
+        }
+    }, [localStream]);
 
     const setStream = () => {
         navigator
             .mediaDevices
             .getUserMedia(streamConstraints)
             .then((stream) => {
-                const audioContext = new AudioContext();
-                const source = audioContext.createMediaStreamSource(stream);
-                const processor = audioContext.createScriptProcessor(256);
-                processor.onaudioprocess = processAudio;
-                processor.connect(audioContext.destination);
-                source.connect(processor);
+                stream.getVideoTracks()[0].enabled = !blinded;
                 stream.getAudioTracks()[0].enabled = !muted;
                 setLocalStream(stream);
             })
@@ -117,16 +187,28 @@ export const Me = () => {
             setMuted(true);
             localStream.getAudioTracks()[0].enabled = false;
         }
+        if (peerProps) {
+            const {meetingId} = peerProps;
+            socket.emit(MUTE_USER, {
+                meetingId,
+                muted: !muted
+            });
+        }
     };
 
     const toggleBlinded = () => {
         if (blinded) {
             setBlinded(false);
-            setStream();
+            localStream.getVideoTracks()[0].enabled = true;
         } else {
             setBlinded(true);
-            localStream.getVideoTracks().forEach(function(track) {
-                track.stop();
+            localStream.getVideoTracks()[0].enabled = false;
+        }
+        if (peerProps) {
+            const {meetingId} = peerProps;
+            socket.emit(BLIND_USER, {
+                meetingId,
+                blinded: !blinded
             });
         }
     };
@@ -143,13 +225,17 @@ export const Me = () => {
         }
     };
 
+    const VideoWrapper = peerProps ? YourVideoWrapper : MyVideoWrapper;
+    const Video = peerProps ? YourVideo : MyVideo;
+
     return (
         <VideoWrapper>
             {(error || muted) ? null : (
                 <Progress volume={volume} />
             )}
-            <ActionButtons>
+            <ActionButtons inMeeting={Boolean(peerProps)}>
                 <Mute onClick={toggleMuted} muted={muted} />
+                {peerProps && <Hangup />}
                 <Blind onClick={toggleBlinded} blinded={blinded} />
             </ActionButtons>
             <Video
@@ -164,7 +250,15 @@ export const Me = () => {
     );
 };
 
-const Video = styled.video`
+Me.propTypes = {
+    muted: PropTypes.bool,
+    blinded: PropTypes.bool,
+    setMuted: PropTypes.func,
+    setBlinded: PropTypes.func,
+    peerProps: PropTypes.object
+};
+
+const MyVideo = styled.video`
     transform: rotateY(180deg);
     border-radius: 10px;
     width: 100%;
@@ -202,7 +296,7 @@ const ProgressBar = styled.div`
     transform-origin: left;
 `;
 
-const VideoWrapper = styled.div`
+const MyVideoWrapper = styled.div`
     position: relative;
     width: 100%;
     margin: 0 10px;
@@ -234,7 +328,7 @@ const IconButton = styled.button`
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background-color: ${(props) => props.on ? 'transparent' : fadedYellow};
+    background-color: ${(props) => props.active ? 'transparent' : fadedYellow};
     border: 2px solid ${yellow};
     display: flex;
     justify-content: center;
@@ -245,7 +339,7 @@ const IconButton = styled.button`
     cursor: pointer;
     transition: background-color 0.3s ease-out;
     &:hover {
-        background-color: ${(props) => props.on ? fadedYellow : fadedIconYellow};
+        background-color: ${(props) => props.active ? fadedYellow : fadedIconYellow};
     }
     @media only screen and (min-width: ${tablet}) {
         width: 60px;
@@ -256,6 +350,13 @@ const IconButton = styled.button`
         width: 50px;
         height: 50px;
         margin: 0 5px;
+    }
+`;
+
+const HangupButton = styled(IconButton)`
+    background-color: ${yellow};
+    &:hover {
+        background-color: ${yellowHover};
     }
 `;
 
@@ -273,12 +374,34 @@ const Icon = styled.img`
 `;
 
 const ActionButtons = styled.div`
-    position: absolute;
-    bottom: 20px;
+    ${(props) => props.inMeeting ? (`
+        position: fixed;
+        bottom: 0px;
+        padding: 15px 0px;
+        background-color: ${backgroundBlack};
+        height: 80x;
+        box-sizing: border-box;
+        @media only screen and (min-width: ${tablet}) {
+            height: 100px;
+        }
+        @media only screen and (min-width: ${desktop}) {
+            button {
+                width: 60px;
+                height: 60px;
+                img {
+                    max-width: 30px;
+                    max-height: 30px;
+                }
+            }
+        }
+    `) : (`
+        position: absolute;
+        bottom: 20px;
+        z-index: 2;
+    `)}
     left: 0px;
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2;
 `;

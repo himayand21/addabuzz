@@ -5,3 +5,10 @@ body {
 input {
     font-family: 'Poppins', sans-serif;
 }
+input,
+textarea,
+button,
+select,
+a {
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
