@@ -17,6 +17,7 @@ export const FixedActionButtons = styled(ActionButtons)`
     padding: 20px 0px;
     background-color: ${backgroundBlack};
     box-sizing: border-box;
+    z-index: 5;
     @media only screen and (min-width: ${tablet}) {
         height: 100px;
     }
