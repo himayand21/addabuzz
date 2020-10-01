@@ -24,9 +24,11 @@ export const Meeting = (props) => {
         socket.emit(GET_MUTED_USERS, meetingId);
         socket.emit(GET_BLINDED_USERS, meetingId);
         socket.on(USER_LEFT, (userId) => {
-            // eslint-disable-next-line no-unused-vars
-            const {[userId]: userStream, ...rest} = streams;
-            setStreams(rest);
+            setStreams((oldStreams) => {
+                // eslint-disable-next-line no-unused-vars
+                const {[userId]: userStream, ...rest} = oldStreams;
+                return rest;
+            });
         });
         socket.on(GOT_MUTED_USERS, (tempUsers) => {
             setMutedUsers(tempUsers);
@@ -104,15 +106,15 @@ const Opacify = styled.div`
     position: fixed;
     left: 0px;
     bottom: 80px;
-    max-height: 190px;
-    min-height: 190px;
+    max-height: 197px;
+    min-height: 197px;
     max-width: 100vw;
     min-width: 100vw;
     background-color: ${fadedBackgroundBlack};
     z-index: 3;
     @media only screen and (min-width: ${tablet}) {
-        max-height: 230px;
-        min-height: 230px;
+        max-height: 237px;
+        min-height: 237px;
         bottom: 100px;
     }
     @media only screen and (min-width: ${desktop}) {

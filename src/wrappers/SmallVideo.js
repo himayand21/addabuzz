@@ -4,6 +4,12 @@ import {tablet, desktop} from '../constants/media';
 export const SmallVideoWrapper = styled.div`
     position: relative;
     z-index: 4;
+    margin-right: 5px;
+    display: flex;
+    @media only screen and (min-width: ${desktop}) {
+        margin-bottom: 5px;
+        margin-right: unset;
+    }
 `;
 
 export const SmallVideo = styled.video`

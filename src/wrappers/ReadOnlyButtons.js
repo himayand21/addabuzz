@@ -3,8 +3,8 @@ import styled from 'styled-components';
 
 import {desktop} from '../constants/media';
 
-import micOff from '../assets/mic_off.svg';
-import videoOff from '../assets/video_off.svg';
+import micOff from '../assets/mic_off_readonly.svg';
+import videoOff from '../assets/video_off_readonly.svg';
 
 export const ReadOnlyWrapper = styled.div`
     position: absolute;
@@ -24,7 +24,8 @@ export const ReadOnlyWrapper = styled.div`
             @media only screen and (min-width: ${desktop}) {
                 flex-direction: column-reverse;
                 width: 200px;
-                height: 100%;
+                height: calc(100vh - 100px);
+                left: 0px;
                 top: 0px;
                 padding: 20px;
                 align-items: flex-start;
@@ -69,8 +70,10 @@ export const ReadOnlyButtons = styled.div`
     )}
     ${(props) => props.isSmall && (`
         img {
-            max-height: 20px;
-            max-width: 20px;
+            max-height: 30px;
+            max-width: 30px;
+            min-height: 30px;
+            min-width: 30px;
         }
     `)}
 `;
@@ -84,7 +87,13 @@ export const BlindReadOnly = () => {
 };
 
 const Icon = styled.img`
-    max-width: 30px;
-    max-height: 30px;
+    max-width: 40px;
+    max-height: 40px;
+    min-height: 40px;
+    min-width: 40px;
     margin: 0 5px;
+    background-color: white;
+    padding: 5px;
+    box-sizing: border-box;
+    border-radius: 50%;
 `;

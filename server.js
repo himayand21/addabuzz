@@ -32,14 +32,16 @@ let meetings = [{
     id: 123,
     name: 'Let us meet'
 }];
-let users = [];
+const users = {};
 const mutedUsers = {};
 const blindedUsers = {};
 
 const app = express();
 const httpServer = http.createServer(app);
 
-const io = socketIO(httpServer);
+const io = socketIO(httpServer, {
+    pingInterval: 500
+});
 
 app.use(express.static(__dirname + '/build'));
 
@@ -76,19 +78,15 @@ io.on('connection', (socket) => {
             meetings = meetings.filter(
                 (each) => each.id !== meetingId
             );
-            users = users.filter((each) => each.meetingId !== meetingId);
+            delete users[meetingId];
             io.sockets.emit(MEETING_EXPIRED, meetingId);
         }, (1000 * 60 * 60 * 24));
     });
 
     // when user wants list of users who have joined the meeting
     socket.on(GET_USERS, (meetingId) => {
-        io.in(meetingId).clients((error, clients) => {
-            const meetingUsers = users.filter((each) => {
-                return clients.includes(each.id);
-            });
-            socket.emit(GOT_USERS, meetingUsers);
-        });
+        const meetingUsers = users[meetingId] ? Object.values(users[meetingId]) : [];
+        socket.emit(GOT_USERS, meetingUsers);
     });
 
     // when user mutes oneself
@@ -130,19 +128,17 @@ io.on('connection', (socket) => {
     // when user joins a meeting
     socket.on(JOIN_MEETING, ({meetingId, name, muted, blinded}) => {
         socket.join(meetingId);
-        users.push({
+        const user = {
             name,
             id: socket.id,
             meetingId
-        });
+        };
+        if (!users[meetingId]) {
+            users[meetingId] = {};
+        }
+        users[meetingId][socket.id] = user;
 
-        // informing all members in this room that this user has joined
-        io.in(meetingId).clients((error, clients) => {
-            const meetingUsers = users.filter((each) => {
-                return clients.includes(each.id);
-            });
-            io.in(meetingId).emit(GOT_USERS, meetingUsers);
-        });
+        io.in(meetingId).emit(GOT_USERS, Object.values(users[meetingId]));
         io.in(meetingId).emit(USER_JOINED, socket.id);
 
         // letting all members other than sender know that user has preferred mute / blind
@@ -164,19 +160,17 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        const {meetingId} = users.find((each) => each.id === socket.id) || {};
-        users = users.filter((each) => each.id !== socket.id);
-        if (meetingId) {
-            socket.leave(meetingId);
-
+        console.log(socket.id);
+        console.log(users);
+        const meetingUserMap = Object.values(users);
+        const user = meetingUserMap.find((each) => each[socket.id]);
+        if (user) {
+            const {meetingId} = user[socket.id];
             // informing all members in this room that this user has left
-            io.in(meetingId).clients((error, clients) => {
-                const meetingUsers = users.filter((each) => {
-                    return clients.includes(each.id);
-                });
-                io.in(meetingId).emit(GOT_USERS, meetingUsers);
-            });
+            delete users[meetingId][socket.id];
+            io.in(meetingId).emit(GOT_USERS, Object.values(users[meetingId]));
             io.in(meetingId).emit(USER_LEFT, socket.id);
+            socket.leave(meetingId);
         }
     });
 });

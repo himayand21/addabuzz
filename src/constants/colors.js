@@ -13,6 +13,7 @@ export const fadedYellow = '#ffdd005f';
 export const fadedIconYellow = '#ffdd007f';
 export const fadedSecondaryBlack = '#6a6482';
 export const fadedBackgroundBlack = '#0d0d0d1a';
+export const fadedRed = '#450f0f73';
 
 // active
 export const yellowActive = '#e4c919';
