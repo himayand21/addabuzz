@@ -24,7 +24,6 @@
     ]
   },
   "devDependencies": {
-    "@babel/cli": "^7.11.6",
     "@babel/core": "^7.10.5",
     "@babel/plugin-proposal-class-properties": "^7.10.4",
     "@babel/polyfill": "^7.10.4",
@@ -52,6 +51,7 @@
     "webpack-manifest-plugin": "^2.2.0"
   },
   "dependencies": {
+    "@babel/cli": "^7.11.6",
     "express": "^4.17.1",
     "heroku-ssl-redirect": "^0.1.1",
     "peer": "^0.5.3",
