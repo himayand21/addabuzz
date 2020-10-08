@@ -46,14 +46,14 @@ const io = socketIO(httpServer, {
 });
 
 app.use(sslRedirect());
-app.use(express.static(__dirname + '/build'));
+app.use(express.static(path.join(__dirname + '/../' + 'build')));
 
 app.use('/peer', ExpressPeerServer(httpServer, {
     debug: true
 }));
 
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname + '/build/index.html'));
+    res.sendFile(path.join(__dirname + '/../' + 'build/index.html'));
 });
 
 io.on('connection', (socket) => {
