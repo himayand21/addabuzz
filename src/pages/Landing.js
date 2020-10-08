@@ -166,9 +166,6 @@ export const SubHeader = styled.div`
             font-style: normal;
         }
     }
-    span {
-        margin-left: 3px;
-    }
 `;
 
 export const Line = styled.div`

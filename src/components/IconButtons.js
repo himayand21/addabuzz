@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 
-import {yellow, fadedYellow, fadedIconYellow, yellowHover} from '../constants/colors';
+import {yellow, fadedYellow, fadedIconYellow, yellowHover, fadedWhite} from '../constants/colors';
 import {tablet, desktop} from '../constants/media';
 
 import micOn from '../assets/mic_on.svg';
@@ -10,6 +10,7 @@ import micOff from '../assets/mic_off.svg';
 import videoOn from '../assets/video_on.svg';
 import videoOff from '../assets/video_off.svg';
 import hangUp from '../assets/hang_up.svg';
+import pin from '../assets/pin.svg';
 
 export const Hangup = (props) => {
     return (
@@ -43,6 +44,14 @@ export const Blind = (props) => {
 
 Blind.propTypes = {
     blinded: PropTypes.bool
+};
+
+export const Pin = (props) => {
+    return (
+        <PinButton {...props}>
+            <PinIcon src={pin} />
+        </PinButton>
+    );
 };
 
 const IconButton = styled.button`
@@ -92,4 +101,33 @@ const Icon = styled.img`
         max-width: 25px;
         max-height: 25px;
     }
+`;
+
+const PinButton = styled.button`
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 40px;
+    height: 40px;
+    border: none;
+    outline: none;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border-top-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    background-color: ${fadedWhite};
+    padding: 5px;
+    z-index: 4;
+    &:hover {
+        background-color: white;
+    }
+`;
+
+const PinIcon = styled.img`
+    max-width: 20px;
+    max-height: 20px;
+    transform: rotate(45deg);
 `;

@@ -41,7 +41,8 @@ export const ReadOnlyWrapper = styled.div`
         `
     )}
     ${(props) => props.isSmall && (`
-        padding: 0 10px;
+        padding-left: 10px;
+        padding-right: 0px;
         height: 40px;
         bottom: 0px;
     `)}

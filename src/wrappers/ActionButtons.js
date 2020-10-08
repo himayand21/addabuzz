@@ -38,3 +38,10 @@ export const IntroActionButtons = styled(ActionButtons)`
     bottom: 20px;
     z-index: 2;
 `;
+
+export const ButtonContainer = styled.div`
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+`;

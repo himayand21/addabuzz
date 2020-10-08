@@ -8,7 +8,9 @@ import {
     GET_MUTED_USERS,
     GOT_BLINDED_USERS,
     GOT_MUTED_USERS,
-    LEAVE_MEETING
+    LEAVE_MEETING,
+    GOT_USERS,
+    GET_USERS
 } from '../../socket';
 
 import {tablet, desktop} from '../constants/media';
@@ -22,12 +24,16 @@ export const Meeting = (props) => {
     const [streams, setStreams] = useState({});
     const [mutedUsers, setMutedUsers] = useState({});
     const [blindedUsers, setBlindedUsers] = useState({});
+    const [pinned, setPinned] = useState();
+    const [users, setUsers] = useState([]);
 
     const socket = useContext(SocketContext);
 
-    const {users, id, meetingId, ...otherProps} = props;
+    const {id, meetingId, name, ...otherProps} = props;
 
     useEffect(() => {
+        setPinned(id);
+        socket.emit(GET_USERS, meetingId);
         socket.emit(GET_MUTED_USERS, meetingId);
         socket.emit(GET_BLINDED_USERS, meetingId);
         socket.on(USER_LEFT, (userId) => {
@@ -36,6 +42,9 @@ export const Meeting = (props) => {
                 const {[userId]: userStream, ...rest} = oldStreams;
                 return rest;
             });
+        });
+        socket.on(GOT_USERS, (tempUsers) => {
+            setUsers(tempUsers);
         });
         socket.on(GOT_MUTED_USERS, (tempUsers) => {
             setMutedUsers(tempUsers);
@@ -63,7 +72,10 @@ export const Meeting = (props) => {
                     id,
                     setStreams,
                     meetingId,
-                    leaveMeeting
+                    leaveMeeting,
+                    isPinned: pinned === id,
+                    name,
+                    pinVideo: () => setPinned(id)
                 }}
             />
             {Object.entries(streams).map(([userId, stream]) => {
@@ -73,9 +85,11 @@ export const Meeting = (props) => {
                     <You
                         key={userId}
                         stream={stream}
-                        users={users}
+                        userName={users.find((each) => each.id === userId)?.name}
                         muted={muted}
                         blinded={blinded}
+                        isPinned={pinned === userId}
+                        pinVideo={() => setPinned(userId)}
                     />
                 );
             })}
@@ -86,10 +100,16 @@ export const Meeting = (props) => {
 Meeting.propTypes = {
     users: PropTypes.array,
     id: PropTypes.string,
-    meetingId: PropTypes.number
+    meetingId: PropTypes.number,
+    name: PropTypes.string
 };
 
 const MeetingWrapper = styled.div`
+    &::-webkit-scrollbar {
+        display: none
+    }
+    -ms-overflow-style: none;
+    scrollbar-width: none;
     display: flex;
     position: fixed;
     left: 0px;

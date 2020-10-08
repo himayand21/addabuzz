@@ -163,24 +163,36 @@ io.on('connection', (socket) => {
         socket.emit(JOINED_MEETING, socket.id);
     });
 
-    const leaveMeeting = () => {
+    socket.on(LEAVE_MEETING, () => {
         const meetingUserMap = Object.values(users);
         const user = meetingUserMap.find((each) => each[socket.id]);
         if (user) {
+            socket.leave(meetingId);
+            socket.emit(LEFT_MEETING);
+
             const {meetingId} = user[socket.id];
 
             // informing all members in this room that this user has left
             delete users[meetingId][socket.id];
             io.in(meetingId).emit(GOT_USERS, Object.values(users[meetingId]));
             io.in(meetingId).emit(USER_LEFT, socket.id);
-            socket.leave(meetingId);
-            socket.emit(LEFT_MEETING);
         }
-    };
+    });
 
-    socket.on(LEAVE_MEETING, leaveMeeting);
+    socket.on('disconnect', () => {
+        const meetingUserMap = Object.values(users);
+        const user = meetingUserMap.find((each) => each[socket.id]);
+        if (user) {
+            socket.leave(meetingId);
 
-    socket.on('disconnect', leaveMeeting);
+            const {meetingId} = user[socket.id];
+
+            // informing all members in this room that this user has left
+            delete users[meetingId][socket.id];
+            io.in(meetingId).emit(GOT_USERS, Object.values(users[meetingId]));
+            io.in(meetingId).emit(USER_LEFT, socket.id);
+        }
+    });
 });
 
 httpServer.listen(PORT, () => {

@@ -2,7 +2,8 @@ import React, {useRef, useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
 
 import {ReadOnlyButtons, ReadOnlyWrapper, MuteReadOnly, BlindReadOnly} from '../wrappers/ReadOnlyButtons';
-import {SmallVideoWrapper, SmallVideo} from '../wrappers/SmallVideo';
+import {MeetingVideoWrapper, MeetingVideo, NameWrapper, Name} from '../wrappers/MeetingVideo';
+import {Pin} from '../components/IconButtons';
 
 import {Progress} from './Progress';
 
@@ -11,7 +12,7 @@ export const You = (props) => {
     const [volume, setVolume] = useState(0);
 
     const ref = useRef(null);
-    const {stream, muted, blinded} = props;
+    const {stream, muted, blinded, isPinned, pinVideo, userName} = props;
 
     useEffect(() => {
         if (stream) {
@@ -43,26 +44,52 @@ export const You = (props) => {
         }
     }, [remoteStream]);
 
+    const isSmall = !isPinned;
+
+    const handleClick = () => {
+        if (!isSmall) return;
+        pinVideo();
+    };
+
     return (
-        <SmallVideoWrapper>
-            <ReadOnlyWrapper isSmall>
+        <MeetingVideoWrapper isBig={!isSmall}>
+            {isSmall && (
+                <Pin onClick={handleClick} />
+            )}
+            <NameWrapper isBig={!isSmall}>
+                <Name isBig={!isSmall}>
+                    {userName}
+                </Name>
+            </NameWrapper>
+            <ReadOnlyWrapper
+                isSmall={isSmall}
+                isBig={!isSmall}
+            >
                 {!muted && <Progress volume={volume} />}
-                <ReadOnlyButtons isSmall>
+                <ReadOnlyButtons
+                    isSmall={isSmall}
+                    isBig={!isSmall}
+                >
                     {muted && <MuteReadOnly />}
                     {blinded && <BlindReadOnly />}
                 </ReadOnlyButtons>
             </ReadOnlyWrapper>
-            <SmallVideo
+            <MeetingVideo
+                onClick={handleClick}
+                isBig={!isSmall}
                 autoPlay
                 muted={muted}
                 ref={ref}
             />
-        </SmallVideoWrapper>
+        </MeetingVideoWrapper>
     );
 };
 
 You.propTypes = {
     stream: PropTypes.object,
     muted: PropTypes.bool,
-    blinded: PropTypes.bool
+    blinded: PropTypes.bool,
+    isPinned: PropTypes.bool,
+    pinVideo: PropTypes.func,
+    userName: PropTypes.string
 };

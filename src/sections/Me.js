@@ -11,11 +11,11 @@ import {tablet, desktop} from '../constants/media';
 import {SocketContext} from '../context';
 
 import {Progress} from '../components/Progress';
-import {Mute, Blind, Hangup} from '../components/IconButtons';
+import {Mute, Blind, Hangup, Pin} from '../components/IconButtons';
 
-import {BigVideoWrapper, BigVideo} from '../wrappers/BigVideo';
+import {MeetingVideoWrapper, MeetingVideo, NameWrapper, Name} from '../wrappers/MeetingVideo';
 import {IntroVideoWrapper, IntroVideo} from '../wrappers/IntroVideo';
-import {FixedActionButtons, IntroActionButtons} from '../wrappers/ActionButtons';
+import {FixedActionButtons, IntroActionButtons, ButtonContainer} from '../wrappers/ActionButtons';
 import {ReadOnlyWrapper, ReadOnlyButtons, MuteReadOnly, BlindReadOnly} from '../wrappers/ReadOnlyButtons';
 
 export const Me = (props) => {
@@ -180,31 +180,60 @@ export const Me = (props) => {
         }
     };
 
-    const isBig = Boolean(peerProps);
+    const inMeeting = Boolean(peerProps);
+    const isPinned = peerProps?.isPinned;
 
-    const VideoWrapper = isBig ? BigVideoWrapper : IntroVideoWrapper;
-    const Video = isBig ? BigVideo : IntroVideo;
+    const VideoWrapper = inMeeting ? MeetingVideoWrapper : IntroVideoWrapper;
+    const Video = inMeeting ? MeetingVideo : IntroVideo;
     const ActionButtons = peerProps ? FixedActionButtons : IntroActionButtons;
 
+    const isBig = inMeeting && isPinned;
+
+    const handleClick = () => {
+        if (isBig || !inMeeting) {
+            return;
+        }
+        peerProps.pinVideo();
+    };
+
     return (
-        <VideoWrapper>
-            <ReadOnlyWrapper isBig={isBig}>
+        <VideoWrapper isBig={isBig}>
+            {inMeeting && (
+                <NameWrapper isBig={isBig}>
+                    <Name isBig={isBig}>
+                        {peerProps.name}
+                    </Name>
+                </NameWrapper>
+            )}
+            {inMeeting && !isBig && (
+                <Pin onClick={handleClick} />
+            )}
+            <ReadOnlyWrapper
+                isBig={isBig}
+                isSmall={!isBig}
+            >
                 {(error || muted) ? null : (
                     <Progress volume={volume} />
                 )}
                 {peerProps && (
-                    <ReadOnlyButtons isBig={isBig}>
+                    <ReadOnlyButtons
+                        isBig={isBig}
+                        isSmall={!isBig}
+                    >
                         {muted && <MuteReadOnly />}
                         {blinded && <BlindReadOnly />}
                     </ReadOnlyButtons>
                 )}
             </ReadOnlyWrapper>
             <ActionButtons inMeeting={isBig}>
-                <Mute onClick={toggleMuted} muted={muted} />
-                {peerProps && <Hangup onClick={peerProps.leaveMeeting} />}
-                <Blind onClick={toggleBlinded} blinded={blinded} />
+                <ButtonContainer>
+                    <Mute onClick={toggleMuted} muted={muted} />
+                    {peerProps && <Hangup onClick={peerProps.leaveMeeting} />}
+                    <Blind onClick={toggleBlinded} blinded={blinded} />
+                </ButtonContainer>
             </ActionButtons>
             <Video
+                isBig={isBig}
                 autoPlay
                 muted
                 ref={ref}

@@ -5,6 +5,7 @@ export const black = '#0d0d0d';
 export const secondaryBlack = '#444053';
 export const lightGrey = '#5d5f46';
 export const placeholderGrey = '#b5b79f';
+export const red = '#e15759';
 
 // faded
 export const fadedBlack = '#0d0d0d73';
@@ -14,6 +15,7 @@ export const fadedIconYellow = '#ffdd007f';
 export const fadedSecondaryBlack = '#6a6482';
 export const fadedBackgroundBlack = '#0d0d0d1a';
 export const fadedRed = '#450f0f73';
+export const fadedWhite = '#ffffffea';
 
 // active
 export const yellowActive = '#e4c919';

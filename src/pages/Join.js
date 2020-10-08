@@ -97,13 +97,13 @@ export const Join = (props) => {
     if (id) {
         return (
             <Meeting
-                users={users}
                 id={id}
                 meetingId={meetingId}
                 muted={muted}
                 setMuted={setMuted}
                 blinded={blinded}
                 setBlinded={setBlinded}
+                name={name}
             />
         );
     }
