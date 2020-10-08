@@ -41,9 +41,7 @@ const blindedUsers = {};
 const app = express();
 const httpServer = http.createServer(app);
 
-const io = socketIO(httpServer, {
-    pingInterval: 500
-});
+const io = socketIO(httpServer);
 
 app.use(sslRedirect());
 app.use(express.static(path.join(__dirname + '/../' + 'build')));
