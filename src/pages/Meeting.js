@@ -2,7 +2,14 @@ import React, {useEffect, useContext, useState} from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 
-import {USER_LEFT, GET_BLINDED_USERS, GET_MUTED_USERS, GOT_BLINDED_USERS, GOT_MUTED_USERS} from '../../socket';
+import {
+    USER_LEFT,
+    GET_BLINDED_USERS,
+    GET_MUTED_USERS,
+    GOT_BLINDED_USERS,
+    GOT_MUTED_USERS,
+    LEAVE_MEETING
+} from '../../socket';
 
 import {tablet, desktop} from '../constants/media';
 import {fadedBackgroundBlack} from '../constants/colors';
@@ -38,6 +45,11 @@ export const Meeting = (props) => {
         });
     }, []);
 
+    const leaveMeeting = () => {
+        socket.emit(LEAVE_MEETING);
+        setStreams({});
+    };
+
     const remoteStreamsExist = Boolean(Object.keys(streams).length);
 
     return (
@@ -50,7 +62,8 @@ export const Meeting = (props) => {
                 peerProps={{
                     id,
                     setStreams,
-                    meetingId
+                    meetingId,
+                    leaveMeeting
                 }}
             />
             {Object.entries(streams).map(([userId, stream]) => {
@@ -106,15 +119,15 @@ const Opacify = styled.div`
     position: fixed;
     left: 0px;
     bottom: 80px;
-    max-height: 197px;
-    min-height: 197px;
+    max-height: 227px;
+    min-height: 227px;
     max-width: 100vw;
     min-width: 100vw;
     background-color: ${fadedBackgroundBlack};
     z-index: 3;
     @media only screen and (min-width: ${tablet}) {
-        max-height: 237px;
-        min-height: 237px;
+        max-height: 287px;
+        min-height: 287px;
         bottom: 100px;
     }
     @media only screen and (min-width: ${desktop}) {

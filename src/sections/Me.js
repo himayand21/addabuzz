@@ -23,7 +23,7 @@ export const Me = (props) => {
     const [volume, setVolume] = useState(0);
     const [localStream, setLocalStream] = useState();
 
-    const {muted, setMuted, blinded, setBlinded, peerProps} = props;
+    const {muted, setMuted, blinded, setBlinded, peerProps, setCameraError} = props;
 
     const ref = useRef(null);
 
@@ -60,7 +60,7 @@ export const Me = (props) => {
     }, []);
 
     useEffect(() => {
-        if (localStream && !muted) {
+        if (localStream) {
             const audioContext = new AudioContext();
             const source = audioContext.createMediaStreamSource(localStream);
             const processor = audioContext.createScriptProcessor(256);
@@ -115,11 +115,16 @@ export const Me = (props) => {
                             });
                         });
                     });
+                } else {
+                    setCameraError(false);
                 }
             })
             .catch((err) => {
                 console.log('navigator.getUserMedia error: ', err);
                 setError(true);
+                if (!peerProps) {
+                    setCameraError(true);
+                }
             });
     };
 
@@ -196,7 +201,7 @@ export const Me = (props) => {
             </ReadOnlyWrapper>
             <ActionButtons inMeeting={isBig}>
                 <Mute onClick={toggleMuted} muted={muted} />
-                {peerProps && <Hangup />}
+                {peerProps && <Hangup onClick={peerProps.leaveMeeting} />}
                 <Blind onClick={toggleBlinded} blinded={blinded} />
             </ActionButtons>
             <Video
@@ -216,7 +221,8 @@ Me.propTypes = {
     blinded: PropTypes.bool,
     setMuted: PropTypes.func,
     setBlinded: PropTypes.func,
-    peerProps: PropTypes.object
+    peerProps: PropTypes.object,
+    setCameraError: PropTypes.func
 };
 
 const Message = styled.div`

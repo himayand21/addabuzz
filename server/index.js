@@ -1,16 +1,17 @@
-const http = require('http');
-const path = require('path');
-const express = require('express');
-const socketIO = require('socket.io');
-const shortID = require('shortid');
+import path from 'path';
+import http from 'http';
+import sslRedirect from 'heroku-ssl-redirect';
+import express from 'express';
+import socketIO from 'socket.io';
+import shortID from 'shortid';
+import {ExpressPeerServer} from 'peer';
 
-const {ExpressPeerServer} = require('peer');
-
-const {
+import {
     GET_MEETING,
     CREATE_MEETING,
     GET_USERS,
     JOIN_MEETING,
+    LEAVE_MEETING,
     GOT_MEETING,
     GOT_USERS,
     CREATED_MEETING,
@@ -23,13 +24,14 @@ const {
     GET_MUTED_USERS,
     GET_BLINDED_USERS,
     GOT_BLINDED_USERS,
-    GOT_MUTED_USERS
-} = require('./socket');
+    GOT_MUTED_USERS,
+    LEFT_MEETING
+} from '../socket';
 
 const PORT = process.env.PORT || 5000;
 
 let meetings = [{
-    id: 123,
+    id: 234,
     name: 'Let us meet'
 }];
 const users = {};
@@ -43,6 +45,7 @@ const io = socketIO(httpServer, {
     pingInterval: 500
 });
 
+app.use(sslRedirect());
 app.use(express.static(__dirname + '/build'));
 
 app.use('/peer', ExpressPeerServer(httpServer, {
@@ -155,24 +158,31 @@ io.on('connection', (socket) => {
             mutedUsers[meetingId][socket.id] = true;
         }
 
+        io.in(meetingId).emit(GOT_MUTED_USERS, mutedUsers[meetingId] || {});
+        io.in(meetingId).emit(GOT_BLINDED_USERS, blindedUsers[meetingId] || {});
+
         // letting this user enter
         socket.emit(JOINED_MEETING, socket.id);
     });
 
-    socket.on('disconnect', () => {
-        console.log(socket.id);
-        console.log(users);
+    const leaveMeeting = () => {
         const meetingUserMap = Object.values(users);
         const user = meetingUserMap.find((each) => each[socket.id]);
         if (user) {
             const {meetingId} = user[socket.id];
+
             // informing all members in this room that this user has left
             delete users[meetingId][socket.id];
             io.in(meetingId).emit(GOT_USERS, Object.values(users[meetingId]));
             io.in(meetingId).emit(USER_LEFT, socket.id);
             socket.leave(meetingId);
+            socket.emit(LEFT_MEETING);
         }
-    });
+    };
+
+    socket.on(LEAVE_MEETING, leaveMeeting);
+
+    socket.on('disconnect', leaveMeeting);
 });
 
 httpServer.listen(PORT, () => {

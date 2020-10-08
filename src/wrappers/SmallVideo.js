@@ -16,12 +16,12 @@ export const SmallVideo = styled.video`
     transform: rotateY(180deg);
     background-color: black;
     border-radius: 10px;
-    max-height: 170px;
-    min-height: 170px;
+    max-height: 200px;
+    min-height: 200px;
     box-sizing: border-box;
     @media only screen and (min-width: ${tablet}) {
-        max-height: 200px;
-        min-height: 200px;
+        max-height: 250px;
+        min-height: 250px;
     }
     @media only screen and (min-width: ${desktop}) {
         max-width: 300px;

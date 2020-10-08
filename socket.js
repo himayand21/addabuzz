@@ -7,6 +7,7 @@ const MUTE_USER = 'mute-user';
 const BLIND_USER = 'blind-user';
 const GET_MUTED_USERS = 'get-muted-users';
 const GET_BLINDED_USERS = 'get-blinded-users';
+const LEAVE_MEETING = 'leave-meeting';
 
 // action success response
 const GOT_MEETING = 'got-meeting';
@@ -15,6 +16,7 @@ const GOT_USERS = 'got-users';
 const JOINED_MEETING = 'joined-meeting';
 const GOT_MUTED_USERS = 'got-muted-users';
 const GOT_BLINDED_USERS = 'got-blinded-users';
+const LEFT_MEETING = 'left-meeting';
 
 // action side effects
 const MEETING_EXPIRED = 'meeting-expired';
@@ -38,5 +40,7 @@ module.exports = {
     GOT_MUTED_USERS,
     GOT_BLINDED_USERS,
     GET_BLINDED_USERS,
-    GET_MUTED_USERS
+    GET_MUTED_USERS,
+    LEAVE_MEETING,
+    LEFT_MEETING
 };

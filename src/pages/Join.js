@@ -2,7 +2,13 @@ import React, {useState, useContext, useEffect} from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 
-import {GET_USERS, GOT_USERS, JOINED_MEETING, JOIN_MEETING} from '../../socket';
+import {
+    GET_USERS,
+    GOT_USERS,
+    JOINED_MEETING,
+    JOIN_MEETING,
+    LEFT_MEETING
+} from '../../socket';
 
 import {SocketContext} from '../context';
 
@@ -31,11 +37,12 @@ const joinNames = (names) => {
 
 export const Join = (props) => {
     const [name, setName] = useState('');
-    const [id, setId] = useState(null);
+    const [id, setId] = useState();
     const [users, setUsers] = useState([]);
 
     const [muted, setMuted] = useState(false);
     const [blinded, setBlinded] = useState(false);
+    const [cameraError, setCameraError] = useState(false);
 
     const socket = useContext(SocketContext);
 
@@ -56,6 +63,9 @@ export const Join = (props) => {
         socket.on(JOINED_MEETING, (myId) => {
             setId(myId);
         });
+        socket.on(LEFT_MEETING, () => {
+            setId(null);
+        });
     }, []);
 
     const handleChange = (event) => {
@@ -71,6 +81,18 @@ export const Join = (props) => {
             blinded
         }));
     };
+
+    const rejoinMeeting = () => {
+        window.location.reload();
+    };
+
+    if (id === null) {
+        return (
+            <div>
+                <button onClick={rejoinMeeting}>Rejoin</button>
+            </div>
+        );
+    }
 
     if (id) {
         return (
@@ -96,6 +118,7 @@ export const Join = (props) => {
                         setMuted={setMuted}
                         blinded={blinded}
                         setBlinded={setBlinded}
+                        setCameraError={setCameraError}
                     />
                 </JoinLeftWrapper>
                 <JoinRightWrapper>
@@ -118,7 +141,7 @@ export const Join = (props) => {
                         </NameInput>
                         <JoinButton>
                             <Button
-                                disabled={!name}
+                                disabled={!name || cameraError}
                                 onClick={joinMeeting}
                             >
                                 {joinRoom}
